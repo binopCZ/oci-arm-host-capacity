@@ -8,13 +8,16 @@ use PHPUnit\Framework\TestCase;
 
 class FileCacheTest extends TestCase
 {
-    const CONFIG_MD5 = '0c4b5682ece1704df5bf11d71fa55177';
+    private string $configMd5;
 
     use DefaultConfig;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $config = $this->getDefaultConfig();
+        $this->configMd5 = md5(serialize($config));
 
         if (file_exists($this->getCacheFilename())) {
             unlink($this->getCacheFilename());
@@ -27,7 +30,7 @@ class FileCacheTest extends TestCase
         $cache = new FileCache($config);
 
         $this->assertEquals(
-            self::CONFIG_MD5,
+            $this->configMd5,
             $cache->getCacheKey('foo'),
         );
     }
@@ -51,16 +54,10 @@ class FileCacheTest extends TestCase
 
         $cache->add([1, 'one'], 'foo');
 
-        $expected = <<<EOD
-{
-    "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
-            1,
-            "one"
-        ]
-    }
-}
-EOD;
+        $expected = json_encode(
+            ['foo' => [$this->configMd5 => [1, 'one']]],
+            JSON_PRETTY_PRINT
+        );
 
         $this->assertEquals(
             $expected,
@@ -73,37 +70,15 @@ EOD;
         $config = $this->getDefaultConfig();
         $cache = new FileCache($config);
 
-        $existingCache = <<<EOD
-{
-    "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
-            1,
-            "one"
-        ]
-    }
-}
-EOD;
-
-        file_put_contents($this->getCacheFilename(), $existingCache);
+        $existingData = ['foo' => [$this->configMd5 => [1, 'one']]];
+        file_put_contents($this->getCacheFilename(), json_encode($existingData, JSON_PRETTY_PRINT));
 
         $cache->add([2, 'two'], 'bar');
 
-        $expected = <<<EOD
-{
-    "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
-            1,
-            "one"
-        ]
-    },
-    "bar": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
-            2,
-            "two"
-        ]
-    }
-}
-EOD;
+        $expected = json_encode(
+            ['foo' => [$this->configMd5 => [1, 'one']], 'bar' => [$this->configMd5 => [2, 'two']]],
+            JSON_PRETTY_PRINT
+        );
 
         $this->assertEquals(
             $expected,
@@ -114,38 +89,22 @@ EOD;
     public function testUpdatesWithDifferentConfig()
     {
         $config = $this->getDefaultConfig();
-        $config->bootVolumeId = 'baz';
         $cache = new FileCache($config);
 
-        $existingCache = <<<EOD
-{
-    "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
-            1,
-            "one"
-        ]
-    }
-}
-EOD;
+        $config2 = $this->getDefaultConfig();
+        $config2->bootVolumeId = 'baz';
+        $configMd5Two = md5(serialize($config2));
+        $cache2 = new FileCache($config2);
 
-        file_put_contents($this->getCacheFilename(), $existingCache);
+        $existingData = ['foo' => [$this->configMd5 => [1, 'one']]];
+        file_put_contents($this->getCacheFilename(), json_encode($existingData, JSON_PRETTY_PRINT));
 
-        $cache->add([11, 'eleven'], 'foo');
+        $cache2->add([11, 'eleven'], 'foo');
 
-        $expected = <<<EOD
-{
-    "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
-            1,
-            "one"
-        ],
-        "b11f9e5fbe425f149a45af5a9fb40d66": [
-            11,
-            "eleven"
-        ]
-    }
-}
-EOD;
+        $expected = json_encode(
+            ['foo' => [$this->configMd5 => [1, 'one'], $configMd5Two => [11, 'eleven']]],
+            JSON_PRETTY_PRINT
+        );
 
         $this->assertEquals(
             $expected,
