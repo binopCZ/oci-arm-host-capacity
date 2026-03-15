@@ -1,5 +1,4 @@
 name: Tests
-
 on:
   push:
     branches:
@@ -9,7 +8,6 @@ on:
       - main
   schedule:
     - cron: '*/5 * * * *'
-
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -25,7 +23,6 @@ jobs:
           php-version: ${{ matrix.php-versions }}
       - name: Validate composer.json and composer.lock
         run: composer validate
-
       - name: Get Composer Cache Directory
         id: composer-cache
         run: |
@@ -36,10 +33,13 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.php-version }}-composer-${{ matrix.dependencies }}-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.php-version }}-composer-${{ matrix.dependencies }}-
-
       - name: Install dependencies
         run: |
           composer update --prefer-dist --no-progress
+      - name: Write OCI private key to file
+        run: |
+          echo "${{ secrets.OCI_PRIVATE_KEY }}" > /tmp/oci_private_key.pem
+          chmod 600 /tmp/oci_private_key.pem
       - name: Run test suite
         run: |
           vendor/bin/phpunit --colors tests/
@@ -48,7 +48,7 @@ jobs:
           OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
           OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
           OCI_KEY_FINGERPRINT: ${{ secrets.OCI_KEY_FINGERPRINT }}
-          OCI_PRIVATE_KEY_FILENAME: ${{ secrets.OCI_PRIVATE_KEY_FILENAME }}
+          OCI_PRIVATE_KEY_FILENAME: /tmp/oci_private_key.pem
           OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
           OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
           OCI_OCPUS: ${{ secrets.OCI_OCPUS }}
