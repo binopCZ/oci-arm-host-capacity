@@ -41,7 +41,7 @@ jobs:
         env:
           OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: |
-          echo "$OCI_PRIVATE_KEY" | base64 -d > /tmp/oci_private_key.pem
+                    printf '%s' "$OCI_PRIVATE_KEY" > /tmp/oci_private_key.pem
           chmod 600 /tmp/oci_private_key.pem
           head -1 /tmp/oci_private_key.pem
           wc -l /tmp/oci_private_key.pem
