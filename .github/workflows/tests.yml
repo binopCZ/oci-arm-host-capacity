@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
   schedule:
     - cron: '*/5 * * * *'
 jobs:
@@ -37,8 +38,10 @@ jobs:
         run: |
           composer update --prefer-dist --no-progress
       - name: Write OCI private key to file
+        env:
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: |
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > /tmp/oci_private_key.pem
+          printf '%s' "$OCI_PRIVATE_KEY" > /tmp/oci_private_key.pem
           chmod 600 /tmp/oci_private_key.pem
       - name: Run test suite
         run: |
