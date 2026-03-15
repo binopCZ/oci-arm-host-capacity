@@ -41,8 +41,10 @@ jobs:
         env:
           OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: |
-          printf '%s' "$OCI_PRIVATE_KEY" > /tmp/oci_private_key.pem
+          echo "$OCI_PRIVATE_KEY" > /tmp/oci_private_key.pem
           chmod 600 /tmp/oci_private_key.pem
+          head -1 /tmp/oci_private_key.pem
+          wc -l /tmp/oci_private_key.pem
       - name: Run test suite
         run: |
           vendor/bin/phpunit --colors tests/
