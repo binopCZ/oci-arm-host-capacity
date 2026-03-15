@@ -17,7 +17,7 @@ class FileCacheTest extends TestCase
         parent::setUp();
 
         $config = $this->getDefaultConfig();
-        $this->configMd5 = md5(serialize($config));
+                $this->configMd5 = md5(json_encode($config));
 
         if (file_exists($this->getCacheFilename())) {
             unlink($this->getCacheFilename());
@@ -93,7 +93,7 @@ class FileCacheTest extends TestCase
 
         $config2 = $this->getDefaultConfig();
         $config2->bootVolumeId = 'baz';
-        $configMd5Two = md5(serialize($config2));
+                $configMd5Two = md5(json_encode($config2));
         $cache2 = new FileCache($config2);
 
         $existingData = ['foo' => [$this->configMd5 => [1, 'one']]];
